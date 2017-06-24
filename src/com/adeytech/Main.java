@@ -1,4 +1,4 @@
-package com.company;
+package com.adeytech;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,22 +14,39 @@ public class Main {
             new Person("Tamiru Endale", 22),
             new Person("Daniel Begashaw", 45),
             new Person("Simret Hagos", 31),
-            new Person("Ephrem Gualan", 12)
+            new Person("Ephrem Gualan", 56),
+            new Person("Hellen Berhe", 122, new Address("1245 shoreline ", "45177", "Tokoma", "Washington")),
+            new Person("Kemer Yusuf ", 111, new Address("1245 shoreline", "45177", "Tokoma", "Washington")),
+            new Person("Thitina Mesfin", 113, new Address("56433 Belvue road ", "13744", "Belvue", "Washington")),
+            new Person("Hagos Begashaw", 142, new Address("4356 Lake city ", "45122", "Seatle", "Washington"))
     });
 
-   static Address a = new Address("4312 Caleta", "75038", "Irving", "Texas");
+    static Address a = new Address("4312 Caleta", "75038", "Irving", "Texas");
     static Address a2 = new Address("2265 Crippen", "32904", "Melbourne", "Florida");
 
 
     public static void main(String[] args) {
 
-        CompletableFuture<Person> personCompletableFuture = asyncSetAddresses();
+        CompletableFuture<List<Person>> personCompletableFuture = asyncSetAddresses();
         try {
-            Person result = personCompletableFuture.get();
-            System.out.println(result.getName()+"  "+ result.getAddress().getAddress());
+            List<Person> result = personCompletableFuture.get();
             System.out.println("--------> "+Thread.currentThread().getName());
 
         } catch (InterruptedException  | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        CompletableFuture<List<Person>> checkAndAddToList = asyncCheckAndAddToList();
+
+        CompletableFuture<Void> listOfCompletableFuture = CompletableFuture.allOf(personCompletableFuture, checkAndAddToList);
+
+        try {
+            Void ps = listOfCompletableFuture.get();
+            System.out.println(listOfCompletableFuture.isDone());
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
             e.printStackTrace();
         }
     }
@@ -39,8 +56,8 @@ public class Main {
     }
 
 
-    public static CompletableFuture<Person> asyncSetAddresses() {
-        CompletableFuture<Person> completableFutures = new CompletableFuture<>();
+    public static CompletableFuture<List<Person>> asyncSetAddresses() {
+        CompletableFuture<List<Person>> completableFutures = new CompletableFuture<>();
 
         Executors.newCachedThreadPool().submit(() -> {
 
@@ -48,16 +65,16 @@ public class Main {
                 Thread.sleep(20);
 
                 persons.forEach(p -> {
-                    if(p.getAge()>25)
+                    if(p.getAge()>25 && p.getAge()<100)
                     p.setAddress(a);
-                    else p.setAddress(a2);
+                    else if(p.getAge()<25) p.setAddress(a2);
 
                     successful(p);
-                    completableFutures.complete(p);
+                    completableFutures.complete(persons);
                 });
 
                 System.out.println(Thread.currentThread().getName());
-                System.out.println("---------------------------------------------------------");
+                System.out.println("---------------------------------------------------------:)");
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -71,9 +88,9 @@ public class Main {
 
     static List<Person> persons1 = new ArrayList<>();
 
-    public static CompletableFuture<Person> asyncCheckAndAddToList()
+    public static CompletableFuture<List<Person>> asyncCheckAndAddToList()
     {
-        CompletableFuture<Person> personCompletableFuture = new
+        CompletableFuture<List<Person>> personCompletableFuture = new
                 CompletableFuture<>();
 
         List<Address> addresses = new ArrayList<>();
@@ -81,13 +98,15 @@ public class Main {
         addresses.add(a2);
 
         Executors.newCachedThreadPool().submit(()-> {
-            persons1 = persons.stream().filter(p-> {
-                p.getAge()>25
-            }).collect(Collectors.toList());
+            persons1 = persons.stream().filter(p->
+                addresses.contains(p.getAddress()))
+                    .collect(Collectors.toList());
 
+            personCompletableFuture.complete(persons1);
+            return null;
         });
 
-        return
+        return personCompletableFuture;
     }
 
 }

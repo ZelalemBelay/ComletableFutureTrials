@@ -1,4 +1,4 @@
-package com.company;
+package com.adeytech;
 
 /**
  * Created by ZeeloGet on 6/23/2017.

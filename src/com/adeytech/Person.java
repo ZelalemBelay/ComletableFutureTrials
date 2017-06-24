@@ -1,4 +1,4 @@
-package com.company;
+package com.adeytech;
 
 /**
  * Created by ZeeloGet on 6/23/2017.
@@ -14,6 +14,12 @@ public class Person {
     }
 
     public Person() {
+    }
+
+    public Person(String name, int age, Address address) {
+        this.name = name;
+        this.age = age;
+        this.address = address;
     }
 
     public String getName() {
