@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -24,8 +25,58 @@ public class Main {
     static Address a = new Address("4312 Caleta", "75038", "Irving", "Texas");
     static Address a2 = new Address("2265 Crippen", "32904", "Melbourne", "Florida");
 
+    static List<Person> persons2 = new ArrayList<>();
+    static List<Address> addresses1 = new ArrayList<>();
 
     public static void main(String[] args) {
+
+        CompletableFuture<List<Person>> completableFutureSupply = CompletableFuture.supplyAsync(() -> {
+                    persons.forEach(p -> {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        if(p.getAge()>25 && p.getAge()<100)
+                            p.setAddress(a);
+                        else if(p.getAge()<25) p.setAddress(a2);
+
+                        successful(p);
+                    });
+
+                    System.out.println(Thread.currentThread().getName());
+                    System.out.println("---------------------------------------------------------:)");
+
+                return persons;
+            }
+        );
+
+        completableFutureSupply.thenApplyAsync(l -> {
+            persons2 = l.stream().
+                    map(person -> {
+                                String x = "Mr. ".concat(person.getName());
+                                person.setName(x);
+                                return person;
+                    }).
+                    filter(p->
+                    addresses1.contains(p.getAddress()))
+                    .collect(Collectors.toList());
+
+            return persons2;
+        });
+
+        try {
+
+            System.out.println("-------------Method 1. Sequential------------");
+            List<Person> ps = completableFutureSupply.get();
+            completableFutureSupply.whenComplete((people, throwable) -> people.forEach(pp-> System.out.println(pp.getName())));
+
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("-------------Method 2. Non Sequential---ANY---------");
 
         CompletableFuture<List<Person>> personCompletableFuture = asyncSetAddresses();
         try {
@@ -44,9 +95,7 @@ public class Main {
             Void ps = listOfCompletableFuture.get();
             System.out.println(listOfCompletableFuture.isDone());
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
     }
